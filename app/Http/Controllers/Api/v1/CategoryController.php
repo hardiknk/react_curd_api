@@ -18,30 +18,33 @@ class CategoryController extends Controller
      */
     public function __construct()
     {
-        // echo "hjooo";
     }
-    public function index()
+    public function index(Request $request)
     {
+        // dd($request->input());
+        // echo '<pre>';
+        // print_r($request->input());
+        // '</pre>';
+
         try {
-            //code...
+            $page = $request->has("page") ? $request->page : 1;
+            $limit = $request->has("limit") ? $request->limit : 10;
+
+            $category = Category::query();
+            $total_item = $category->count();
+            $categories =  $category->limit($limit)->offset(($page - 1) * $limit)->latest()->get();
+
+            $paginate = [
+                "page_size" => $limit,
+                "current_page" => $page,
+                "total_item" => $total_item,
+                "total_page_count" => ceil($total_item / $limit),
+            ];
+
+            return (CategoryResources::collection($categories))->additional(["paginate" => $paginate]);
         } catch (Exception $e) {
+            return response()->json($e->getMessage());
         }
-        $category = Category::query();
-        $total_item = $category->count();
-        $categories =  $category->latest()->get();
-
-        $pageSize = 2;
-        $currentPage =  1;
-
-
-        $paginate = [
-            "page_size" => $pageSize,
-            "current_page" => $currentPage,
-            "total_item" => $total_item,
-            "total_page_count" => ceil($total_item / $pageSize),
-        ];
-
-        return (CategoryResources::collection($categories))->additional(["paginate" => $paginate]);
     }
 
     /**
@@ -90,7 +93,6 @@ class CategoryController extends Controller
      */
     public function edit(Category $category)
     {
-
         return response()->json($category);
         //
     }
@@ -104,13 +106,29 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        $is_update = $category->update($request->input());
-        if ($is_update) {
-            return "success";
-        } else {
-            return  "something_wrong";
+
+        try {
+            if ($request->has("category_status")) {
+                $status = $request->category_status === true ? "y" : "n";
+                $is_update =   $category->update([
+                    "is_active" => $status,
+                ]);
+                if ($is_update) {
+                    return "success";
+                } else {
+                    return  "something_wrong";
+                }
+            } else {
+                $is_update = $category->update($request->input());
+                if ($is_update) {
+                    return "success";
+                } else {
+                    return  "something_wrong";
+                }
+            }
+        } catch (Exception $ex) {
+            return response()->json($ex->getMessage());
         }
-        //
     }
 
     /**
