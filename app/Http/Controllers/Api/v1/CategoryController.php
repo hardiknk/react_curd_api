@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AllCategoryResource;
 use App\Http\Resources\CategoryResources;
 use App\Models\Category;
 use Exception;
@@ -47,6 +48,21 @@ class CategoryController extends Controller
         }
     }
 
+    public function allCategory()
+    {
+        try {
+            $categories = Category::all();
+            return AllCategoryResource::collection($categories)->additional([
+                "meta" => [
+                    "message" => "Categories Fetch Successfully",
+                ]
+            ]);
+        } catch (Exception $e) {
+            $this->response['meta']['message']  = $e->getMessage();
+        }
+
+        return $this->returnResponse();
+    }
     /**
      * Show the form for creating a new resource.
      *
